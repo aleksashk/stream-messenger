@@ -11,6 +11,6 @@ public interface MessageService {
     Message createMessage(Message message);
     Optional<Message> getMessageById(Long id);
     List<Message> getAllMessages();
-    MessageStatus updateMessageStatus(Long messageId, MessageStatusEnum status);
+    public MessageStatus updateMessageStatus(Long messageId, MessageStatusEnum status);
     List<MessageStatus> getMessageStatuses(Long messageId);
 }

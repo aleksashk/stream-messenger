@@ -12,17 +12,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
     private final MessageStatusRepository messageStatusRepository;
+    private final EmailSenderService emailSenderService;
 
     @Autowired
-    public MessageServiceImpl(MessageRepository messageRepository, MessageStatusRepository messageStatusRepository) {
+    public MessageServiceImpl(MessageRepository messageRepository,
+                              MessageStatusRepository messageStatusRepository,
+                              EmailSenderService emailSenderService) {
         this.messageRepository = messageRepository;
         this.messageStatusRepository = messageStatusRepository;
+        this.emailSenderService = emailSenderService;
     }
 
     @Override
@@ -33,6 +39,13 @@ public class MessageServiceImpl implements MessageService {
 
         MessageStatus status = new MessageStatus(savedMessage, MessageStatusEnum.CREATED);
         messageStatusRepository.save(status);
+
+        // Параллельная отправка сообщений
+        CompletableFuture.runAsync(() -> emailSenderService.sendEmail(
+                message.getRecipient(),
+                "Subject",
+                message.getContent()
+        ));
 
         return savedMessage;
     }
@@ -51,7 +64,7 @@ public class MessageServiceImpl implements MessageService {
     @Transactional
     public MessageStatus updateMessageStatus(Long messageId, MessageStatusEnum status) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new EntityNotFoundException("Message with ID " + messageId + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Message not found"));
 
         MessageStatus messageStatus = new MessageStatus(message, status);
         return messageStatusRepository.save(messageStatus);
@@ -60,7 +73,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageStatus> getMessageStatuses(Long messageId) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new EntityNotFoundException("Message with ID " + messageId + " not found"));
+                .orElseThrow(() -> new RuntimeException("Message not found"));
 
         return messageStatusRepository.findAllByMessage(message);
     }

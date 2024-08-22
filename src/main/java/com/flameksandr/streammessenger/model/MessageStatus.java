@@ -20,10 +20,16 @@ public class MessageStatus {
     @JoinColumn(name = "message_id", nullable = false)
     private Message message;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String messageStatus;
+    private MessageStatusEnum messageStatus;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    public MessageStatus(Message message, MessageStatusEnum status) {
+        this.message = message;
+        this.messageStatus = status;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
